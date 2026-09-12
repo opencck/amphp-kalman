@@ -1,0 +1,95 @@
+{
+    "name": "opencck/amphp-kalman",
+    "description": "High-performance n-dimensional discrete Kalman filter for PHP with AMPHP v3 async streaming layer",
+    "version": "1.0.0",
+    "type": "library",
+    "license": "MIT",
+    "keywords": [
+        "kalman",
+        "filter",
+        "state-estimation",
+        "amphp",
+        "async",
+        "trading",
+        "time-series"
+    ],
+    "homepage": "https://github.com/opencck/amphp-kalman",
+    "authors": [
+        {
+            "name": "OpenCCK",
+            "homepage": "https://github.com/opencck"
+        }
+    ],
+    "support": {
+        "issues": "https://github.com/opencck/amphp-kalman/issues",
+        "source": "https://github.com/opencck/amphp-kalman",
+        "docs": "https://github.com/opencck/amphp-kalman/blob/master/README.md"
+    },
+    "require": {
+        "php": "^8.2",
+        "amphp/amp": "^3.0",
+        "amphp/byte-stream": "^2",
+        "amphp/file": "^3",
+        "amphp/parallel": "^2",
+        "amphp/pipeline": "^1.0",
+        "amphp/sync": "^2.0",
+        "amphp/websocket-client": "^2",
+        "revolt/event-loop": "^1.0"
+    },
+    "require-dev": {
+        "amphp/http-client": "^5",
+        "amphp/http-server": "^3",
+        "amphp/http-server-router": "^2",
+        "amphp/phpunit-util": "^3.0",
+        "amphp/redis": "^2",
+        "amphp/websocket-server": "^4",
+        "phpstan/phpstan": "^2.0",
+        "phpunit/phpunit": "^9.6",
+        "vimeo/psalm": "^6"
+    },
+    "suggest": {
+        "amphp/websocket-client": "Live market data ingest (Phase 4)",
+        "amphp/websocket-server": "Broadcasting estimates to clients (Phase 4)",
+        "amphp/http-server": "HTTP state endpoint (Phase 4)",
+        "amphp/file": "Backtest history streaming and snapshot persistence (Phase 4)",
+        "amphp/redis": "Cross-process snapshot persistence (Phase 4)",
+        "amphp/parallel": "Multi-core scaling and parallel calibration (Phase 5)",
+        "ext-ffi": "OpenBLAS backend for n > 32 (FilterConfig::withBackend(Backend::Blas), ADR-006)",
+        "ext-opcache": "JIT (opcache.jit=1255) gives 2-4x on the filter hot loop; 1205 is unsupported on PHP < 8.4 (ADR-007)"
+    },
+    "autoload": {
+        "psr-4": {
+            "OpenCCK\\Kalman\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "OpenCCK\\Kalman\\Tests\\": "tests/",
+            "OpenCCK\\Kalman\\Bench\\": "bench/",
+            "OpenCCK\\Kalman\\Examples\\": "examples/"
+        }
+    },
+    "scripts": {
+        "test": "php -dzend.assertions=1 -dassert.exception=1 vendor/bin/phpunit",
+        "test:fast": "php -dzend.assertions=1 -dassert.exception=1 vendor/bin/phpunit --exclude-group slow",
+        "test:blas": "php -dextension=ffi -dffi.enable=1 -dzend.assertions=1 -dassert.exception=1 vendor/bin/phpunit --filter BlasDenseTest",
+        "bench": "php -dzend.assertions=-1 -dopcache.enable_cli=1 -dopcache.jit=1255 -dopcache.jit_buffer_size=128M -dopcache.jit_max_root_traces=100000 -dopcache.jit_max_side_traces=100000 -dopcache.jit_max_exit_counters=32768 bench/run.php",
+        "bench:baseline": "php -dzend.assertions=-1 -dopcache.enable_cli=1 -dopcache.jit=1255 -dopcache.jit_buffer_size=128M -dopcache.jit_max_root_traces=100000 -dopcache.jit_max_side_traces=100000 -dopcache.jit_max_exit_counters=32768 bench/run.php --save-baseline",
+        "analyse": [
+            "@analyse:phpstan",
+            "@analyse:psalm"
+        ],
+        "analyse:phpstan": "vendor/bin/phpstan analyse --memory-limit=1G",
+        "analyse:psalm": "vendor/bin/psalm --no-progress"
+    },
+    "config": {
+        "sort-packages": true,
+        "platform-check": true,
+        "process-timeout": 0
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true,
+    "scripts-descriptions": {
+        "analyse": "Runs both static analysers: PHPStan level 9 and Psalm errorLevel 1"
+    }
+}

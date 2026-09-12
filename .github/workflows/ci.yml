@@ -1,0 +1,73 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+jobs:
+  test:
+    name: Tests (PHP ${{ matrix.php }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['8.2', '8.3', '8.4']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: opcache, pcntl, sockets
+          ini-values: zend.assertions=1, assert.exception=1, opcache.enable_cli=1, opcache.jit=1255, opcache.jit_buffer_size=128M
+          coverage: none
+      - uses: ramsey/composer-install@v3
+      - run: composer test
+
+  blas:
+    name: BLAS backend (ext-ffi + OpenBLAS)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y libopenblas0
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: opcache, ffi
+          ini-values: zend.assertions=1, assert.exception=1, ffi.enable=1, opcache.enable_cli=1, opcache.jit=1255, opcache.jit_buffer_size=128M
+          coverage: none
+      - uses: ramsey/composer-install@v3
+      - run: KALMAN_BLAS_LIB=libopenblas.so.0 composer test:blas
+      # records blas_n* next to flat_n* (F·P·Fᵀ) and the full step with Backend::Blas — the ADR-006 crossover
+      - run: KALMAN_BLAS_LIB=libopenblas.so.0 composer bench -- --filter=layout,form
+
+  analyse:
+    name: Static analysis (PHPStan + Psalm)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: ffi
+          ini-values: ffi.enable=1
+          coverage: none
+      - uses: ramsey/composer-install@v3
+      # `composer analyse` runs PHPStan level 9 and then Psalm errorLevel 1 (ADR-009)
+      - run: composer analyse
+
+  bench:
+    name: Benchmarks vs baseline
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: opcache
+          ini-values: opcache.enable_cli=1, opcache.jit=1255, opcache.jit_buffer_size=128M
+          coverage: none
+      - uses: ramsey/composer-install@v3
+      # bench/results/baseline.json was recorded on the maintainer's machine; hosted runners differ by tens of percent,
+      # so CI gates on gross regressions only (2× slower = interpreter fallback, broken kernel) and on allocations (exact 0).
+      - run: composer bench -- --compare --tolerance=1.0

@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
+         bootstrap="vendor/autoload.php"
+         colors="true"
+         cacheResultFile=".phpunit.cache/test-results"
+         failOnRisky="true"
+         failOnWarning="true"
+         beStrictAboutOutputDuringTests="true"
+         convertDeprecationsToExceptions="false">
+    <php>
+        <ini name="zend.assertions" value="1"/>
+        <ini name="assert.exception" value="1"/>
+        <ini name="memory_limit" value="1G"/>
+        <ini name="error_reporting" value="-1"/>
+    </php>
+    <testsuites>
+        <testsuite name="unit">
+            <directory>tests/Unit</directory>
+        </testsuite>
+        <testsuite name="reference">
+            <directory>tests/Reference</directory>
+        </testsuite>
+        <testsuite name="invariant">
+            <directory>tests/Invariant</directory>
+        </testsuite>
+        <testsuite name="property">
+            <directory>tests/Property</directory>
+        </testsuite>
+        <testsuite name="consistency">
+            <directory>tests/Consistency</directory>
+        </testsuite>
+        <testsuite name="golden">
+            <directory>tests/Golden</directory>
+        </testsuite>
+        <testsuite name="async">
+            <directory>tests/Async</directory>
+        </testsuite>
+        <testsuite name="architecture">
+            <directory>tests/Architecture</directory>
+        </testsuite>
+    </testsuites>
+    <coverage>
+        <include>
+            <directory suffix=".php">src</directory>
+        </include>
+    </coverage>
+</phpunit>

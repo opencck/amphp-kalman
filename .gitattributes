@@ -1,0 +1,64 @@
+# Set the default behavior, in case people don't have core.autocrlf set.
+* text=auto eol=lf
+
+# Declare files that will always have LF line endings on checkout.
+# Only the types this repository actually contains are listed.
+*.php      text eol=lf
+*.json     text eol=lf
+*.md       text eol=lf
+*.xml      text eol=lf
+*.neon     text eol=lf
+*.yml      text eol=lf
+*.phpstub  text eol=lf
+
+# Denote all files that are truly binary and should not be modified.
+*.png binary
+*.jpg binary
+*.dll binary
+*.gz  binary
+
+# ---------------------------------------------------------------------------
+# Not part of the installed package.
+#
+# Composer's dist archive is produced by `git archive` (GitHub's zipball honours
+# the same rules), so every path marked export-ignore is absent from
+# `composer require opencck/amphp-kalman`. Roughly half the repository is
+# development material that a consumer never loads: src/ is 1.3 MB, and the
+# directories below are another 1.3 MB on top of it.
+#
+# What deliberately stays: src/, composer.json, LICENSE, both READMEs,
+# CHANGELOG.md, and tools/fetch-openblas.php — the README tells the user to run
+# that one to set up the opt-in BLAS backend (ADR-006), so it has to ship.
+#
+# Nothing in src/ reads any of these paths at runtime; the example file names in
+# MetricRegistry's catalogue cards are plain strings, never opened.
+
+/.editorconfig                    export-ignore
+/.gitattributes                   export-ignore
+/.github/                         export-ignore
+/.gitignore                       export-ignore
+
+# Test, benchmark and analysis configuration
+/phpstan.neon                     export-ignore
+/phpunit.xml                      export-ignore
+/psalm.xml                        export-ignore
+/tests/                           export-ignore
+/bench/                           export-ignore
+/tools/psalm/                     export-ignore
+
+# docs/ and examples/ deliberately DO ship. They are user documentation, not
+# development material: README links into docs/theory.md and docs/models/, and
+# examples/README.md is the generated catalogue of everything the library can
+# measure — the entry point ROADMAP §8.1 defines for exactly that question.
+# Excluding them would leave those links dangling for anyone reading the package
+# out of vendor/ instead of on GitHub, and every example is a runnable, offline,
+# deterministic demo of a measurement.
+
+# Contributor-facing context, not user documentation (BRIEF §8)
+/BRIEF.md                         export-ignore
+/CLAUDE.md                        export-ignore
+/ROADMAP.md                       export-ignore
+
+# Code generators, run only when regenerating committed output
+/tools/generate-kernels.php       export-ignore
+/tools/generate-metric-index.php  export-ignore

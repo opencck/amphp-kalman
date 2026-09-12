@@ -1,0 +1,18 @@
+<?php
+
+/**
+ * Minimal ext-pcntl surface used by the project (graceful shutdown in the
+ * examples, guarded at runtime by `extension_loaded('pcntl')`).
+ *
+ * Psalm's <enableExtensions> does not accept "pcntl", and the extension is not
+ * loaded in the analysis process, so the constants would be reported as
+ * undefined. Values are the Linux signal numbers; only their existence matters
+ * to the analysis.
+ */
+
+const SIGINT = 2;
+const SIGTERM = 15;
+const SIGHUP = 1;
+const SIGQUIT = 3;
+const SIGUSR1 = 10;
+const SIGUSR2 = 12;

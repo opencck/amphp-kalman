@@ -1,0 +1,22 @@
+/vendor/
+
+# A library resolves against the consumer's constraints, so the lock file is not
+# committed; CI installs from composer.json (ramsey/composer-install).
+/composer.lock
+
+# Analyser and test caches; the paths come from phpunit.xml, psalm.xml and
+# phpstan.neon, so they must stay in step with those three files.
+/.phpunit.cache/
+/.phpstan.cache/
+/.psalm.cache/
+
+# Benchmark output: every run overwrites latest.json, only the baseline is
+# committed — CI compares against it (bench/run.php --compare).
+/bench/results/*.json
+!/bench/results/baseline.json
+
+# Local OpenBLAS binaries fetched by tools/fetch-openblas.php (~49 MB).
+# tools/psalm/pcntl.phpstub is NOT ignored: psalm.xml references it.
+/tools/openblas/
+
+.idea/

@@ -1,0 +1,120 @@
+<?xml version="1.0"?>
+<psalm
+    errorLevel="1"
+    phpVersion="8.2"
+    resolveFromConfigFile="true"
+    strictBinaryOperands="false"
+    findUnusedVariablesAndParams="true"
+    findUnusedPsalmSuppress="true"
+    findUnusedBaselineEntry="true"
+    findUnusedCode="false"
+    ensureArrayStringOffsetsExist="true"
+    ensureArrayIntOffsetsExist="false"
+    cacheDirectory=".psalm.cache"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns="https://getpsalm.org/schema/config"
+    xsi:schemaLocation="https://getpsalm.org/schema/config vendor/vimeo/psalm/config.xsd"
+>
+    <!--
+        Second analyser next to PHPStan level 9 (ADR-009). errorLevel 1 is the
+        strictest Psalm setting.
+
+        findUnusedCode stays off: a library's public API is by definition unused
+        from inside the package. findUnusedVariablesAndParams is on — that part
+        is genuinely useful and PHPStan does not report it.
+
+        strictBinaryOperands is off deliberately: this is numerical code where
+        `3.0 - $n` and `0.1 * $c` with an int operand are idiomatic and exact in
+        PHP; requiring a cast on every such expression would add noise to the hot
+        loops without catching a single real defect.
+
+        phpVersion is pinned to the minimum the package supports (composer.json
+        `php: ^8.2`), so Psalm judges the code by the oldest engine it must run on.
+    -->
+
+    <projectFiles>
+        <directory name="src"/>
+        <directory name="tests"/>
+        <directory name="bench"/>
+        <directory name="examples"/>
+        <directory name="tools"/>
+        <ignoreFiles>
+            <directory name="vendor"/>
+        </ignoreFiles>
+    </projectFiles>
+
+    <!-- Optional extensions the code guards at runtime; analysed as if present. -->
+    <enableExtensions>
+        <extension name="ffi"/>
+    </enableExtensions>
+
+    <!-- ext-pcntl is not in Psalm's extension list; the examples use its signal constants. -->
+    <stubs>
+        <file name="tools/psalm/pcntl.phpstub"/>
+    </stubs>
+
+    <issueHandlers>
+        <!--
+            #[\Override] is a PHP 8.3 attribute and the package supports 8.2
+            (composer.json `php: ^8.2`), so it cannot be used yet.
+        -->
+        <MissingOverrideAttribute errorLevel="suppress"/>
+
+        <!--
+            `$P = &$this->P;` is the documented hot-loop idiom (BRIEF §2, rule 12):
+            a reference avoids the copy-on-write that a plain read would trigger on
+            the next write. Psalm states it "cannot analyze" property references;
+            it does not claim they are wrong. PHPStan level 9 checks these methods.
+        -->
+        <UnsupportedPropertyReferenceUsage errorLevel="suppress"/>
+
+        <!--
+            Several `/** @var T */` annotations exist because PHPStan cannot infer
+            the type there (generics on async(), Queue<T>, json_decode shapes).
+            Psalm infers them and calls the annotation unnecessary; removing them
+            would break the other analyser.
+        -->
+        <UnnecessaryVarAnnotation errorLevel="suppress"/>
+        <!--
+            The library types matrices as array<int, float>, and the casts Psalm calls
+            redundant sit on the boundaries where external data enters (fromDense,
+            fromArray, decoded JSON). There the docblock is a contract, not a fact: PHP
+            would happily store an int, and a single int in a float array breaks the
+            bit-identity assertions the golden and worker tests rely on. The casts stay.
+        -->
+        <RedundantCastGivenDocblockType errorLevel="suppress"/>
+        <!--
+            Tests read keys out of serialised configs and snapshots — array<string, mixed>
+            by contract — and assert on what they find. Guarding every read with isset()
+            would make the tests WEAKER: a missing key has to fail the assertion, not skip
+            it. These relaxations therefore apply to tests/ only; src/, bench/, examples/
+            and tools/ are analysed with nothing suppressed beyond the four documented
+            entries above.
+        -->
+        <PossiblyUndefinedStringArrayOffset>
+            <errorLevel type="suppress">
+                <directory name="tests"/>
+            </errorLevel>
+        </PossiblyUndefinedStringArrayOffset>
+        <MixedAssignment>
+            <errorLevel type="suppress">
+                <directory name="tests"/>
+            </errorLevel>
+        </MixedAssignment>
+        <MixedOperand>
+            <errorLevel type="suppress">
+                <directory name="tests"/>
+            </errorLevel>
+        </MixedOperand>
+        <MixedArrayAccess>
+            <errorLevel type="suppress">
+                <directory name="tests"/>
+            </errorLevel>
+        </MixedArrayAccess>
+        <MixedArgumentTypeCoercion>
+            <errorLevel type="suppress">
+                <directory name="tests"/>
+            </errorLevel>
+        </MixedArgumentTypeCoercion>
+    </issueHandlers>
+</psalm>
