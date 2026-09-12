@@ -203,11 +203,15 @@ segment of Windows CLI processes (ADR-008).
 
 - **Metrics.** `tests/Unit/Metric/` covers the support structures and the
   metric contract (every implementation round-trips through `toArray()`,
-  resets cleanly and reports stable keys); `tests/Reference/Metric/` checks each
-  indicator against an independent naive implementation written in the test,
-  plus values derived by hand from the definition. `MetricCatalogueTest` keeps
-  the published catalogue in step with the code, and `MetricBench` asserts zero
-  allocations per update.
+  resets cleanly and reports stable keys) — the *shape* of a metric, never its
+  arithmetic. The arithmetic is `tests/Reference/Metric/`: one file per
+  measurement, all 32 of them, each checking the metric against an independent
+  naive implementation written from the published formula inside the test, plus
+  values derived by hand where the definition allows one, plus the property the
+  metric is chosen for (drift independence, a bound, an invariance, an exact
+  recovery from synthetic data). A new measurement without one of these is not
+  finished. `MetricCatalogueTest` keeps the published catalogue in step with the
+  code, and `MetricBench` asserts zero allocations per update.
 - **Reference.** `tests/Reference/NaiveKalmanFilter.php` implements equations
   (1)–(7) with nested arrays, an explicit inverse and the `(I−KH)P` form: slow,
   unstable, obviously correct on short runs. Every production form is compared
@@ -241,7 +245,7 @@ segment of Windows CLI processes (ADR-008).
 Commands:
 
 ```bash
-composer test            # everything (752 tests), zend.assertions=1
+composer test            # everything (1209 tests), zend.assertions=1
 composer test:fast       # without @group slow
 composer test:blas       # BLAS backend (needs ext-ffi + KALMAN_BLAS_LIB, see tools/fetch-openblas.php)
 composer analyse         # PHPStan level 9 AND Psalm errorLevel 1 — both must be clean

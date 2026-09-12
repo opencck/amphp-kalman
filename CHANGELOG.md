@@ -4,6 +4,26 @@ All notable changes to `opencck/amphp-kalman` are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 the project uses [Semantic Versioning](https://semver.org/).
 
+## [1.0.1] — 2026-09-12
+
+### Fixed
+- The `Benchmarks vs baseline` CI job installed only `opcache`, so the three benchmarks that start worker processes —
+  `CalibrationBench`, `IpcBench` and `ScalingBench` — died at the first one. `amphp/parallel` spawns processes through
+  `PosixRunner`, which needs `ext-posix`, and talks to them over `ext-sockets`; `CalibrationBench` reaches that path on
+  its first call, where `HistoryReader::write()` goes through `ParallelFilesystemDriver`. The job now installs
+  `opcache, posix, pcntl, sockets`.
+- `posix` added to the test job as well, which was on `opcache, pcntl, sockets`: it exercises the same worker code
+  paths, so the two jobs differing was accidental rather than deliberate.
+- `ext-posix` and `ext-sockets` recorded in `composer.json` `suggest`. The requirement belongs to the library's parallel
+  features rather than to CI — anyone installing the package and enabling worker-based calibration meets it too.
+
+### Documentation
+- The suite is 1209 tests after the metric reference tests landed, not 752 (`CLAUDE.md`, `BRIEF.md`).
+- `BRIEF.md` §5 now says plainly that the contract tests check the *shape* of a metric, while the 32 files under
+  `tests/Reference/Metric/` check its arithmetic — and that a new measurement without one is not finished.
+
+[1.0.1]: https://github.com/opencck/amphp-kalman/releases/tag/v1.0.1
+
 ## [1.0.0] — 2026-09-12
 
 First public release. Everything below is the work that led to it, kept in the

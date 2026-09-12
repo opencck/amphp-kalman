@@ -1,7 +1,7 @@
 {
     "name": "opencck/amphp-kalman",
     "description": "High-performance n-dimensional discrete Kalman filter for PHP with AMPHP v3 async streaming layer",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "type": "library",
     "license": "MIT",
     "keywords": [
@@ -54,6 +54,8 @@
         "amphp/file": "Backtest history streaming and snapshot persistence (Phase 4)",
         "amphp/redis": "Cross-process snapshot persistence (Phase 4)",
         "amphp/parallel": "Multi-core scaling and parallel calibration (Phase 5)",
+        "ext-posix": "Required by amphp/parallel to start worker processes on POSIX systems; without it multi-core scaling and parallel calibration fail at the first worker",
+        "ext-sockets": "IPC between the parent and its amphp/parallel workers",
         "ext-ffi": "OpenBLAS backend for n > 32 (FilterConfig::withBackend(Backend::Blas), ADR-006)",
         "ext-opcache": "JIT (opcache.jit=1255) gives 2-4x on the filter hot loop; 1205 is unsupported on PHP < 8.4 (ADR-007)"
     },

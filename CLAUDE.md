@@ -55,7 +55,7 @@ The ones violated most easily:
 ## Commands
 
 ```bash
-composer test            # full suite (752 tests), zend.assertions=1
+composer test            # full suite (1209 tests), zend.assertions=1
 composer test:fast       # without @group slow
 composer test:blas       # BLAS backend; needs ext-ffi + KALMAN_BLAS_LIB (tools/fetch-openblas.php)
 composer analyse         # PHPStan level 9 + Psalm errorLevel 1 — both must stay clean
