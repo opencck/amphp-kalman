@@ -223,4 +223,68 @@ final class ArchitectureTest extends TestCase
 		}
 		self::assertSame([], $offenders, 'FFI usage outside Domain\Linalg\Ffi / Covariance\BlasDense');
 	}
+
+	/**
+	 * Every namespaced file sits at the path PSR-4 derives from its namespace,
+	 * compared case-sensitively.
+	 *
+	 * This is a Windows-to-Linux guard rather than a style rule. The project is
+	 * developed on a case-insensitive filesystem, where `examples/decoders/`
+	 * happily autoloads `OpenCCK\Kalman\Examples\Decoders\…`; on the Linux
+	 * runner the same code dies with "Class not found", and only at the moment
+	 * something first touches that class — for the decoders, inside a benchmark
+	 * child process, several jobs deep. Comparing the declared namespace with
+	 * the real path catches it on the developer's own machine instead.
+	 */
+	public function testFilePathsMatchTheirNamespaceCase(): void
+	{
+		$root = \str_replace('\\', '/', \dirname(__DIR__, 2));
+		$composer = \json_decode(self::read($root . '/composer.json'), true, 32, \JSON_THROW_ON_ERROR);
+		self::assertIsArray($composer);
+
+		/** @var array<string, string> $roots */
+		$roots = [];
+		foreach (['autoload', 'autoload-dev'] as $section) {
+			$psr4 = $composer[$section]['psr-4'] ?? [];
+			if (!\is_array($psr4)) {
+				continue;
+			}
+			foreach ($psr4 as $prefix => $directory) {
+				if (\is_string($prefix) && \is_string($directory)) {
+					$roots[$prefix] = \rtrim($directory, '/');
+				}
+			}
+		}
+		self::assertNotSame([], $roots, 'composer.json must declare PSR-4 roots');
+
+		$offenders = [];
+		foreach ($roots as $prefix => $directory) {
+			$base = $root . '/' . $directory;
+			if (!\is_dir($base)) {
+				continue;
+			}
+			foreach (self::phpFiles($base) as $file) {
+				$source = self::read($file);
+				if (\preg_match('/^namespace\s+([^;]+);/m', $source, $matches) !== 1) {
+					// a plain script, not a PSR-4 class file
+					continue;
+				}
+				$namespace = \trim($matches[1]) . '\\';
+				if (!\str_starts_with($namespace, $prefix)) {
+					continue;
+				}
+
+				$expected = $base . '/' . \str_replace('\\', '/', \substr($namespace, \strlen($prefix)))
+					. \basename($file);
+				$actual = \str_replace('\\', '/', $file);
+
+				// a case-sensitive comparison, which is the whole point
+				if ($actual !== \str_replace('//', '/', $expected)) {
+					$offenders[] = \substr($actual, \strlen($root) + 1) . ' declares ' . \trim($matches[1]);
+				}
+			}
+		}
+
+		self::assertSame([], $offenders, 'PSR-4 path and namespace disagree (case-sensitively)');
+	}
 }

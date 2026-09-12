@@ -306,7 +306,7 @@ tests/                     Unit, Reference, Invariant, Property, Consistency,
 bench/                     benchmarks + run.php (process isolation, baseline gate)
 tools/                     generate-kernels.php, fetch-openblas.php, generate-metric-index.php,
                            psalm/, openblas/ (gitignored)
-examples/                  etf-live.php, calibrate-pair.php, backtest-trend.php, decoders/,
+examples/                  etf-live.php, calibrate-pair.php, backtest-trend.php, Decoders/,
                            one runnable script per measurement, Support/Synthetic.php,
                            bootstrap.php (autoloader for both layouts — see "What ships")
 examples/README.md .ru.md  catalogue of measurements — GENERATED from MetricRegistry

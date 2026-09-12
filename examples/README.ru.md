@@ -210,10 +210,10 @@ php examples/backtest-trend.php --synthetic --em
 
 ## Декодеры
 
-В `examples/decoders/` лежат две эталонные реализации `TickDecoder`,
+В `examples/Decoders/` лежат две эталонные реализации `TickDecoder`,
 превращающие WebSocket-кадры биржи в объекты `Measurement`:
-[`BinanceTradeDecoder.php`](decoders/BinanceTradeDecoder.php) и
-[`CoinbaseTickerDecoder.php`](decoders/CoinbaseTickerDecoder.php).
+[`BinanceTradeDecoder.php`](Decoders/BinanceTradeDecoder.php) и
+[`CoinbaseTickerDecoder.php`](Decoders/CoinbaseTickerDecoder.php).
 Это точка входа для всех измерений выше, потребляющих тики или сделки.
 Детали потоковой обработки: [docs/async.ru.md](../docs/async.ru.md).
 

@@ -4,6 +4,20 @@ All notable changes to `opencck/amphp-kalman` are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 the project uses [Semantic Versioning](https://semver.org/).
 
+## [1.0.3] — 2026-09-12
+
+### Fixed
+- `examples/decoders/` did not match the namespace its files declare, `OpenCCK\Kalman\Examples\Decoders`, so PSR-4
+  could not autoload them on a case-sensitive filesystem. The directory is renamed to `examples/Decoders/`, which is
+  what its sibling `examples/Support/` already looked like. `DecoderBench` died with `Class ... not found` on the Linux
+  runner while working on the maintainer's Windows machine, where the filesystem hid the mismatch.
+- `ArchitectureTest::testFilePathsMatchTheirNamespaceCase()` now compares every namespaced file's real path with the
+  path PSR-4 derives from its namespace, case-sensitively, across all four autoload roots read from `composer.json`.
+  A Windows-to-Linux guard rather than a style rule: a mismatch is invisible locally and surfaces on CI only when
+  something first touches the class — here inside a benchmark child process, several jobs deep.
+
+[1.0.3]: https://github.com/opencck/amphp-kalman/releases/tag/v1.0.3
+
 ## [1.0.2] — 2026-09-12
 
 ### Fixed

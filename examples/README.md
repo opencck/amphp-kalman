@@ -213,10 +213,10 @@ analysis.
 
 ## Decoders
 
-`examples/decoders/` holds two reference `TickDecoder` implementations that turn
+`examples/Decoders/` holds two reference `TickDecoder` implementations that turn
 exchange WebSocket frames into `Measurement` objects:
-[`BinanceTradeDecoder.php`](decoders/BinanceTradeDecoder.php) and
-[`CoinbaseTickerDecoder.php`](decoders/CoinbaseTickerDecoder.php).
+[`BinanceTradeDecoder.php`](Decoders/BinanceTradeDecoder.php) and
+[`CoinbaseTickerDecoder.php`](Decoders/CoinbaseTickerDecoder.php).
 They are the entry point for every measurement above that consumes ticks or
 trades. Streaming details: [docs/async.md](../docs/async.md).
 
