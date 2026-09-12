@@ -17,7 +17,9 @@
  *
  * Writes bench/results/latest.json. With --compare, exits 1 when any metric is
  * slower than bench/results/baseline.json by more than the tolerance
- * (allocation metrics must be exactly 0).
+ * (allocation metrics must be exactly 0). A metric that improves by rising —
+ * throughput, speedup — is compared the other way round, and plain counters
+ * (evaluations, ticks, cores_detected, message lengths) are not gated at all.
  *
  * Both files record the engine environment twice: once at the top level for the
  * run as a whole, and once per benchmark under "environments". The per-benchmark
@@ -27,9 +29,11 @@
  * of them came from this run. --compare warns when a benchmark's baseline was
  * recorded on a different PHP or JIT setting, so that a number read off the
  * output is not mistaken for a like-for-like comparison. It still gates on it:
- * CI runs against the maintainer's baseline on purpose, with --tolerance=1.0, to
- * catch the one thing that survives a change of engine — a 2× fall back to the
- * interpreter. Allocation metrics are compared unconditionally.
+ * CI runs against the maintainer's baseline on purpose, with a tolerance wide
+ * enough for a hosted runner (--tolerance=2.0), to catch the one thing that
+ * survives both a change of engine and a change of hardware: the JIT falling
+ * back to the interpreter, which costs 3–8×. Allocation metrics are compared
+ * unconditionally.
  */
 
 use OpenCCK\Kalman\Bench\Support\Benchmark;
@@ -184,6 +188,31 @@ if (isset($options['compare'])) {
 	$baseline = \json_decode((string) \file_get_contents($baselinePath), true, 512, \JSON_THROW_ON_ERROR);
 	// a recorded environment value is whatever the JSON held; render it without assigning it to a typed local
 	$describeEnv = static fn (mixed $value, string $fallback): string => \is_scalar($value) ? (string) $value : $fallback;
+
+	/**
+	 * Which way a metric improves, read from its name.
+	 *
+	 * Not every number recorded here is a duration. Throughput and speedup get
+	 * better by going up, and counters like `evaluations`, `ticks` or
+	 * `cores_detected` describe the run rather than its performance. Treating
+	 * them all as "lower is better" both reported a 3× throughput improvement as
+	 * a regression and would have said nothing at all about a speedup collapsing.
+	 *
+	 * The suffixes are deliberate: `ticks_per_s` ends in `_per_s` and rises with
+	 * performance, while `us_per_tick` ends in `_per_tick` and falls with it.
+	 */
+	$directionOf = static function (string $metric): string {
+		if (\str_ends_with($metric, 'speedup') || \str_ends_with($metric, '_per_s')) {
+			return 'higher';
+		}
+		foreach (['evaluations', 'ticks', 'cores_detected'] as $counter) {
+			if ($metric === $counter || \str_ends_with($metric, '_' . $counter)) {
+				return 'informational';
+			}
+		}
+		// a serialised message length is a property of the format, not a speed
+		return \str_ends_with($metric, '_len') ? 'informational' : 'lower';
+	};
 	foreach ($results['benchmarks'] as $name => $metrics) {
 		// a baseline entry may predate any one of Timer::environment()'s keys, so every read is guarded
 		/** @var array<string, mixed> $recordedIn */
@@ -211,10 +240,21 @@ if (isset($options['compare'])) {
 				}
 				continue;
 			}
-			if ($base === null) {
+			if ($base === null || !($base > 0.0)) {
 				continue;
 			}
-			if ($base > 0.0 && $value > $base * (1.0 + $tolerance)) {
+			$direction = $directionOf($metric);
+			if ($direction === 'informational') {
+				continue;
+			}
+			if ($direction === 'higher') {
+				if ($value < $base / (1.0 + $tolerance)) {
+					\fwrite(\STDERR, \sprintf("REGRESSION %s.%s: %.3f vs baseline %.3f (%.1f%%, higher is better)\n", $name, $metric, $value, $base, 100.0 * ($value / $base - 1.0)));
+					$exit = 1;
+				}
+				continue;
+			}
+			if ($value > $base * (1.0 + $tolerance)) {
 				\fwrite(\STDERR, \sprintf("REGRESSION %s.%s: %.3f vs baseline %.3f (+%.1f%%)\n", $name, $metric, $value, $base, 100.0 * ($value / $base - 1.0)));
 				$exit = 1;
 			}

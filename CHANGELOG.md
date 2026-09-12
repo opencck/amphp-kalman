@@ -4,6 +4,27 @@ All notable changes to `opencck/amphp-kalman` are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 the project uses [Semantic Versioning](https://semver.org/).
 
+## [1.0.4] — 2026-09-12
+
+### Fixed
+- `bench/run.php --compare` treated every recorded number as "lower is better". It therefore reported a throughput
+  **improvement** as a regression — `throughput.ws_to_filter_ticks_per_s` at 46 779 against a 15 235 baseline, three
+  times faster, failed the build — and, the other way round, said nothing at all when a metric that should rise fell:
+  a collapse in `scaling.workers_4_speedup` was invisible. Metrics ending in `speedup` or `_per_s` are now compared in
+  the direction they improve, and plain counters (`evaluations`, `ticks`, `cores_detected`, message `_len`) are not
+  gated at all. The suffixes are load-bearing: `ticks_per_s` rises with performance while `us_per_tick` falls with it.
+  Verified by running the gate against a doctored baseline: the 3.6× throughput gain passes, a speedup of 2.99 against
+  8.00 is caught as `(-62.7%, higher is better)`, and `cores_detected` is ignored.
+
+### Changed
+- The CI benchmark tolerance goes from `1.0` to `2.0`. This is a threshold decision, not a fix: the baseline was
+  recorded on the maintainer's machine and a hosted runner is roughly half its speed on single-threaded work —
+  `CalibrationBench` measured 17.1 s against a 7.9 s baseline — so a 2× threshold fires on the hardware rather than on
+  the code. The gate exists to catch the JIT falling back to the interpreter, which costs 3–8× (ADR-007), and 3× keeps
+  that intent. Allocations remain gated absolutely at exactly 0, whatever the tolerance.
+
+[1.0.4]: https://github.com/opencck/amphp-kalman/releases/tag/v1.0.4
+
 ## [1.0.3] — 2026-09-12
 
 ### Fixed

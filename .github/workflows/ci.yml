@@ -70,6 +70,9 @@ jobs:
           ini-values: opcache.enable_cli=1, opcache.jit=1255, opcache.jit_buffer_size=128M
           coverage: none
       - uses: ramsey/composer-install@v3
-      # bench/results/baseline.json was recorded on the maintainer's machine; hosted runners differ by tens of percent,
-      # so CI gates on gross regressions only (2× slower = interpreter fallback, broken kernel) and on allocations (exact 0).
-      - run: composer bench -- --compare --tolerance=1.0
+      # bench/results/baseline.json was recorded on the maintainer's machine. A hosted runner is roughly half its
+      # speed on single-threaded work — CalibrationBench alone measured 17.1 s against a 7.9 s baseline — so a 2×
+      # threshold leaves no headroom at all and fires on the hardware rather than on the code. The gate exists to catch
+      # the JIT falling back to the interpreter, which costs 3–8× (ADR-007), so 3× keeps that intent with room to spare.
+      # Allocations are gated separately and absolutely: they must be exactly 0 whatever the tolerance.
+      - run: composer bench -- --compare --tolerance=2.0
