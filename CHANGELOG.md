@@ -4,6 +4,26 @@ All notable changes to `opencck/amphp-kalman` are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 the project uses [Semantic Versioning](https://semver.org/).
 
+## [1.0.2] — 2026-09-12
+
+### Fixed
+- `WorkerPools::binary()` started every child with `-n`, which drops `php.ini` *and every `conf.d` file with it*, and
+  then restored the shared extensions **only on Windows** — on the assumption, stated in a comment, that on Linux they
+  are "usually compiled in or loaded via conf.d". On Debian and Ubuntu they are shared modules loaded from exactly the
+  `conf.d` files `-n` discards. A child therefore ran without `posix` and could not spawn a process of its own, which
+  is what `ParallelCalibrator`'s workers and the parallel benchmarks do: `amphp/process` refused with
+  "Missing ext-posix to run processes with PosixRunner". The extensions the parent has loaded are now propagated on
+  every platform, and only those that exist as a loadable file, so an extension compiled into the binary does not draw
+  a "Module already loaded" warning into the child's output — whose last line the benchmark runner parses as JSON.
+- This is the actual cause of the `Benchmarks vs baseline` failure that 1.0.1 tried to fix. Installing `ext-posix` in
+  the CI job was not enough and could not have been: the parent had the extension all along, and the child threw it
+  away. The 1.0.1 change stays, because the parent must have an extension loaded before it can pass it on, and because
+  the test job exercises the same worker paths in-process.
+- The bug was not confined to CI. `WorkerPools::likeParent()` is production code behind `App\Calibration\ParallelCalibrator`,
+  so worker-based calibration was broken for anyone on a distribution that ships these extensions as shared modules.
+
+[1.0.2]: https://github.com/opencck/amphp-kalman/releases/tag/v1.0.2
+
 ## [1.0.1] — 2026-09-12
 
 ### Fixed

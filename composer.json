@@ -1,7 +1,7 @@
 {
     "name": "opencck/amphp-kalman",
     "description": "High-performance n-dimensional discrete Kalman filter for PHP with AMPHP v3 async streaming layer",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "type": "library",
     "license": "MIT",
     "keywords": [

@@ -47,12 +47,15 @@ final class WorkerPools
 		if (\extension_loaded('Zend OPcache')) {
 			$binary[] = '-dzend_extension=opcache';
 		}
-		if (\PHP_OS_FAMILY === 'Windows') {
-			// shared extensions on Windows; on Linux distributions they are usually compiled in or loaded via conf.d
-			foreach (['openssl', 'sockets', 'mbstring', 'zlib', 'pcntl', 'posix', 'ffi'] as $ext) {
-				if (\extension_loaded($ext)) {
-					$binary[] = '-dextension=' . $ext;
-				}
+		// `-n` above drops php.ini and every conf.d file with it. On Debian and
+		// Ubuntu that is exactly where posix, sockets and the rest live — as
+		// shared modules, not compiled in — so a child started without them
+		// cannot spawn a process of its own: amphp/process refuses with
+		// "Missing ext-posix to run processes with PosixRunner". That is what
+		// ParallelCalibrator's workers and the parallel benchmarks do.
+		foreach (['openssl', 'sockets', 'mbstring', 'zlib', 'pcntl', 'posix', 'ffi'] as $ext) {
+			if (\extension_loaded($ext) && self::isSharedExtension($ext, $extDir)) {
+				$binary[] = '-dextension=' . $ext;
 			}
 		}
 		foreach (['opcache.enable_cli', 'opcache.jit', 'opcache.jit_buffer_size', 'opcache.jit_max_root_traces', 'opcache.jit_max_side_traces', 'opcache.jit_max_exit_counters', 'zend.assertions', 'memory_limit', 'ffi.enable'] as $key) {
@@ -69,5 +72,28 @@ final class WorkerPools
 			$binary[] = '-dopcache.cache_id=' . ($cacheId ?? ('kalman-' . ($pid === false ? 'parent' : $pid)));
 		}
 		return $binary;
+	}
+
+	/**
+	 * Whether an extension is loadable from a file rather than compiled into
+	 * the binary.
+	 *
+	 * Passing `-dextension=` for a statically linked extension makes PHP print
+	 * "Module already loaded", and that warning would land in the child's
+	 * output — whose last line the benchmark runner reads back as JSON. When
+	 * the extension directory cannot be resolved the extension is passed
+	 * anyway: an unnecessary flag is recoverable, a missing one is not.
+	 */
+	private static function isSharedExtension(string $extension, string|false $extDir): bool
+	{
+		if (!\is_string($extDir) || $extDir === '') {
+			return true;
+		}
+		$directory = \is_dir($extDir) ? $extDir : \dirname(\PHP_BINARY) . \DIRECTORY_SEPARATOR . $extDir;
+		if (!\is_dir($directory)) {
+			return true;
+		}
+		$file = \PHP_OS_FAMILY === 'Windows' ? 'php_' . $extension . '.dll' : $extension . '.so';
+		return \is_file($directory . \DIRECTORY_SEPARATOR . $file);
 	}
 }
